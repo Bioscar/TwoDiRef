@@ -1,0 +1,13 @@
+Package: TwoDiRef
+Type: Package
+Title: Robust Conditional Bivariate Reference Regions (using Directional Quantile Regression)
+Description: TwoDiRef provides tools for building conditional 2D reference regions in continuous data, especially useful in clinical, biological, or epidemiological studies where robust multivariate assessment is needed. The package combines directional quantiles with median-based partial correlation models to produce reliable, interpretable reference regions, even in the presence of outliers. Key features include robust conditional modeling for two responses conditioned on covariates, directional quantile regions, cross-validation of coverage, visualization tools, and flexible inputs supporting arbitrary formulas and covariates.
+Version: 0.1.0
+Authors@R: c(person("Oscar", "Lado-Baleato", email = "ladooscar@uniovi.es", role = c("aut","cre")), person("Sara", "Rodriguez-Pastoriza", email = "sara.rodriguez.pastoriza@uvigo.es", role = c("aut")), person("Javier", "Roca-Pardinas", email = "roca@uvigo.gal", role = c("aut")))
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 4.0.0)
+Imports: qgam, mgcv, sp, ggplot2, scales, shiny
+Suggests: refreg
+RoxygenNote: 7.3.3
