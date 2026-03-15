@@ -1,0 +1,162 @@
+---
+title: "TwoDiRef: Conditional 2D Robust Reference Regions"
+author: "Óscar Lado-Baleato | Sara Rodríguez-Pastoriza | Javier Roca Pardiñas | Francisco Gude"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+# Overview
+
+This document demonstrates the **TwoDiRef** workflow for building conditional 2D reference regions using **median-based partial correlation models** and **directional quantile regression**. The example uses the `aegis` dataset from `refreg`, for subjects without diabetes.
+
+---
+
+# Load libraries and data
+
+```{r,eval=FALSE, echo=T}
+install.packages("remotes")
+library(remotes)
+install_github("Bioscar/TwoDiRef")
+```
+
+
+```{r setup, message=FALSE, warning=FALSE,fig.width=5,fig.height=5,fig.align="center"}
+library(TwoDiRef)
+library(refreg)
+
+# Subset dataset: subjects without diabetes
+no_dm <- subset(refreg::aegis, dm == "no")
+
+# Quick scatter plot of the raw data
+plot(no_dm$fpg, no_dm$hba1c, 
+     main="FPG vs HBA1c (no diabetes)",
+     xlab="FPG, mg/dL", ylab="HBA1c, %", pch=16, col=adjustcolor("grey", 0.6))
+```
+
+![Scatterplot glycemic markers](README_files/figure-gfm/setup-1.png)
+
+---
+
+# Define formulas for the two responses
+
+We define median models for **FPG** and **HBA1c** conditioned on `age` using smooth terms:
+
+```{r formulas}
+f <- list(
+  fpg   ~ s(age),
+  hba1c ~ s(age)
+)
+f
+```
+
+---
+
+# Fit median-based partial correlation model
+
+```{r median-pcor}
+fit <- median_pcor(f=f, data=no_dm, qu=0.50)
+fit
+```
+
+---
+
+# Plot residuals and effects
+
+Visualize the **standardized residuals** and **median trends with varying partial correlation**:
+
+```{r plot-median-pcor-residuals,fig.align='center'}
+plot(fit, type="residuals", cex=1)
+```
+
+![Bivariate residuals](README_files/figure-gfm/plot-median-pcor-residuals-1.png)
+
+
+```{r plot-median-pcor-effects,fig.height=7,fig.width=7,fig.align='center'}
+plot(fit, type="effects", cex=1)
+```
+
+![Conditional medians and correlations](README_files/figure-gfm/plot-median-pcor-effects-1.png)
+
+---
+
+# Fit conditional directional quantile reference region
+
+We now construct the **bivariate reference region** at the 95% quantile:
+
+```{r dirq-fit}
+region <- dirq(fit, qu=0.95, err=0.01)
+region
+```
+
+---
+
+# Plot directional quantile region
+
+```{r plot-dirq,fig.align="center"}
+plot(region, newdata = data.frame(age=c(20, 40, 80)))
+```
+
+![Estimated regions on residuals scale](README_files/figure-gfm/plot-dirq-1.png)
+
+
+Overlay on the observed data:
+
+```{r overlay-dirq,fig.width=6,fig.height=6,fig.align='center'}
+plot(no_dm$fpg, no_dm$hba1c, col=adjustcolor("grey",0.7),
+     pch=16, cex=1,xlab="FPG, mg/dL", ylab="HBA1c, %")
+lines(predict(region, newdata=data.frame(age=18)), type="l")
+lines(predict(region, newdata=data.frame(age=80)), col=2)
+legend("topleft",col=c(1,2),legend=c("20 years","80 years"),lwd=2,lty=1)
+```
+
+![Predicted reference regions](README_files/figure-gfm/overlay-dirq-1.png)
+
+---
+
+# Cross-validation of coverage
+
+Evaluate how well the directional quantile region covers the data:
+
+```{r cv-dirq-coverage,fig.align='center',fig.width=6,fig.height=6}
+cv_results <- cv_dirq_coverage(
+  region, no_dm,
+  fold_size = 100,
+  verbose   = TRUE,
+  quiet     = TRUE,
+  plot_gam  = TRUE,
+  ci        = TRUE,
+  return_quartiles = TRUE
+)
+
+cv_results$overall_coverage
+cv_results$quartile_coverage
+head(cv_results$data)
+```
+
+![Reference region coverage](README_files/figure-gfm/cv-dirq-coverage-1.png)
+
+---
+
+# Interactive Shiny application
+
+Finally, launch an **interactive Shiny app** to explore how the reference region evolves along `age`:
+
+```{r shiny-region, eval=FALSE, echo=T}
+shiny_region(region, no_dm)
+```
+
+> **Note:** The Shiny app is interactive and cannot be rendered in a static HTML report. 
+
+---
+
+# Summary
+
+This workflow demonstrates:
+
+- Fitting **median-based partial correlation models** for two responses.
+- Building **conditional 2D reference regions** via directional quantiles.
+- Visualizing residuals, effects, and regions.
+- Performing **cross-validation** to assess empirical coverage.
+- Exploring results interactively with **Shiny**.
+
+TwoDiRef provides a robust and interpretable framework for multivariate reference regions, suitable for clinical or experimental datasets.
