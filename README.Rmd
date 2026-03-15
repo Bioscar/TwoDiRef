@@ -113,7 +113,7 @@ legend("topleft",col=c(1,2),legend=c("20 years","80 years"),lwd=2,lty=1)
 
 ---
 
-# Cross-validation of coverage
+# Cross-validation evaluation of estimated regions' coverage
 
 Evaluate how well the directional quantile region covers the data:
 
